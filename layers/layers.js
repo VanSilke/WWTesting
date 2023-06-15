@@ -1,5 +1,5 @@
 ol.proj.proj4.register(proj4);
-ol.proj.get("ESRI:54001").setExtent([179971.099737, 5209.825450, 686885.872590, 453464.155156]);
+ol.proj.get("ESRI:54001").setExtent([70812.083333, -3085.250000, 754758.750000, 601714.750000]);
 var wms_layers = [];
 
 var lyr_innserseav3a_0 = new ol.layer.Image({
