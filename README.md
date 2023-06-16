@@ -1,6 +1,6 @@
-# WWTesting
-World Weep Map Test
+# The Map of World Weep
+
 
 Behold! The thingy.
 
-Layer names are something I'm still working on.
+I have no idea how to code actually.
