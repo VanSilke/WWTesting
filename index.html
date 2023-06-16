@@ -6,83 +6,9 @@
         <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
-        <link rel="stylesheet" href="./resources/ol.css">
-        <link rel="stylesheet" href="resources/fontawesome-all.min.css">
-        <link rel="stylesheet" href="./resources/ol-layerswitcher.css">
-        <link rel="stylesheet" href="./resources/qgis2web.css">
-<style>
-.search-layer {
-  top: 100px;
-  left: .5em;
-}
-.ol-touch .search-layer {
-  top: 130px;
-}
-</style>
-        <style>
-        html, body {
-            background-color: #ffffff;
-        }
-        .ol-control button {
-            background-color: #f8f8f8 !important;
-            color: #000000 !important;
-            border-radius: 0px !important;
-        }
-        .ol-zoom, .geolocate, .gcd-gl-control .ol-control {
-            background-color: rgba(255,255,255,.4) !important;
-            padding: 3px !important;
-        }
-        .ol-scale-line {
-            background: none !important;
-        }
-        .ol-scale-line-inner {
-            border: 2px solid #f8f8f8 !important;
-            border-top: none !important;
-            background: rgba(255, 255, 255, 0.5) !important;
-            color: black !important;
-        }
-        </style>
-<style>
-.tooltip {
-  position: relative;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 4px;
-  color: white;
-  padding: 4px 8px;
-  opacity: 0.7;
-  white-space: nowrap;
-}
-.tooltip-measure {
-  opacity: 1;
-  font-weight: bold;
-}
-.tooltip-static {
-  background-color: #ffcc33;
-  color: black;
-  border: 1px solid white;
-}
-.tooltip-measure:before,
-.tooltip-static:before {
-  border-top: 6px solid rgba(0, 0, 0, 0.5);
-  border-right: 6px solid transparent;
-  border-left: 6px solid transparent;
-  content: "";
-  position: absolute;
-  bottom: -6px;
-  margin-left: -7px;
-  left: 50%;
-}
-.tooltip-static:before {
-  border-top-color: #ffcc33;
-}
-.measure-control {
-  top: 65px;
-  left: .5em;
-}
-.ol-touch .measure-control {
-  top: 80px;
-}
-</style>
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/qgis2web.css"><link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet-measure.css">
         <style>
         html, body, #map {
             width: 100%;
@@ -95,22 +21,348 @@
     </head>
     <body>
         <div id="map">
-            <div id="popup" class="ol-popup">
-                <a href="#" id="popup-closer" class="ol-popup-closer"></a>
-                <div id="popup-content"></div>
-            </div>
         </div>
-        <script src="resources/qgis2web_expressions.js"></script>
-<script src="resources/proj4.js"></script>
-        <script>proj4.defs('ESRI:54001','+proj=eqc +lat_ts=0 +lat_0=0 +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs');</script>
-        <script src="resources/polyfills.js"></script>
-        <script src="./resources/functions.js"></script>
-        <script src="./resources/ol.js"></script>
-        <script src="./resources/ol-layerswitcher.js"></script>
-        <script src="layers/SettlementLabels_2.js"></script>
-        <script src="styles/SettlementLabels_2_style.js"></script>
-        <script src="./layers/layers.js" type="text/javascript"></script> 
-        <script src="./resources/Autolinker.min.js"></script>
-        <script src="./resources/qgis2web.js"></script>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet-measure.js"></script>
+        <script src="js/proj4.js"></script>
+        <script src="js/proj4leaflet.js"></script>
+        <script src="data/Roads_2.js"></script>
+        <script src="data/Settlements_3.js"></script>
+        <script src="data/Legend_4.js"></script>
+        <script>
+        var highlightLayer;
+        function highlightFeature(e) {
+            highlightLayer = e.target;
+
+            if (e.target.feature.geometry.type === 'LineString') {
+              highlightLayer.setStyle({
+                color: '#ffff00',
+              });
+            } else {
+              highlightLayer.setStyle({
+                fillColor: '#ffff00',
+                fillOpacity: 1
+              });
+            }
+        }
+        var crs = new L.Proj.CRS('ESRI:54001', '+proj=eqc +lat_ts=0 +lat_0=0 +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs', {
+            resolutions: [2800, 1400, 700, 350, 175, 84, 42, 21, 11.2, 5.6, 2.8, 1.4, 0.7, 0.35, 0.14, 0.07],
+        });
+        var map = L.map('map', {
+            crs: crs,
+            continuousWorld: false,
+            worldCopyJump: false, 
+            zoomControl:true, maxZoom:28, minZoom:1
+        }).fitBounds([[0.6039216273088934,1.2707183908353574],[5.679962764427529,5.913966739161911]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        var measureControl = new L.Control.Measure({
+            position: 'topleft',
+            primaryLengthUnit: 'feet',
+            secondaryLengthUnit: 'miles',
+            primaryAreaUnit: 'sqfeet',
+            secondaryAreaUnit: 'sqmiles'
+        });
+        measureControl.addTo(map);
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0]
+        .innerHTML = '';
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0]
+        .className += ' fas fa-ruler';
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        map.createPane('pane_InnerSeaMap_0');
+        map.getPane('pane_InnerSeaMap_0').style.zIndex = 400;
+        var img_InnerSeaMap_0 = 'data/InnerSeaMap_0.png';
+        var img_bounds_InnerSeaMap_0 = [[-19.794378528986865,-12.008330534448671],[21.11215765364151,14.021918388636513]];
+        var layer_InnerSeaMap_0 = new L.imageOverlay(img_InnerSeaMap_0,
+                                              img_bounds_InnerSeaMap_0,
+                                              {pane: 'pane_InnerSeaMap_0'});
+        bounds_group.addLayer(layer_InnerSeaMap_0);
+        map.addLayer(layer_InnerSeaMap_0);
+        map.createPane('pane_TerrainGrid_1');
+        map.getPane('pane_TerrainGrid_1').style.zIndex = 401;
+        var img_TerrainGrid_1 = 'data/TerrainGrid_1.png';
+        var img_bounds_TerrainGrid_1 = [[-20.282210638143045,-12.008330534698898],[21.1121576540845,15.5879149934528]];
+        var layer_TerrainGrid_1 = new L.imageOverlay(img_TerrainGrid_1,
+                                              img_bounds_TerrainGrid_1,
+                                              {pane: 'pane_TerrainGrid_1'});
+        bounds_group.addLayer(layer_TerrainGrid_1);
+        map.addLayer(layer_TerrainGrid_1);
+        function pop_Roads_2(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['id'] !== null ? autolinker.link(feature.properties['id'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_Roads_2_0() {
+            return {
+                pane: 'pane_Roads_2',
+                opacity: 1,
+                color: 'rgba(190,178,151,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 8.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Roads_2');
+        map.getPane('pane_Roads_2').style.zIndex = 402;
+        map.getPane('pane_Roads_2').style['mix-blend-mode'] = 'normal';
+        var layer_Roads_2 = new L.geoJson(json_Roads_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Roads_2',
+            layerName: 'layer_Roads_2',
+            pane: 'pane_Roads_2',
+            onEachFeature: pop_Roads_2,
+            style: style_Roads_2_0,
+        });
+        bounds_group.addLayer(layer_Roads_2);
+        map.addLayer(layer_Roads_2);
+        function pop_Settlements_3(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['id'] !== null ? autolinker.link(feature.properties['id'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Settlement'] !== null ? autolinker.link(feature.properties['Settlement'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Level</th>\
+                        <td>' + (feature.properties['Level'] !== null ? autolinker.link(feature.properties['Level'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Description'] !== null ? autolinker.link(feature.properties['Description'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Government</th>\
+                        <td>' + (feature.properties['Government'] !== null ? autolinker.link(feature.properties['Government'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Blacksmith</th>\
+                        <td>' + (feature.properties['Blacksmith'] !== null ? autolinker.link(feature.properties['Blacksmith'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Academy</th>\
+                        <td>' + (feature.properties['Academy'] !== null ? autolinker.link(feature.properties['Academy'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Runesmith</th>\
+                        <td>' + (feature.properties['Runesmith'] !== null ? autolinker.link(feature.properties['Runesmith'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Apothecary</th>\
+                        <td>' + (feature.properties['Apothecary'] !== null ? autolinker.link(feature.properties['Apothecary'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">General Store</th>\
+                        <td>' + (feature.properties['General Store'] !== null ? autolinker.link(feature.properties['General Store'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Stablemaster</th>\
+                        <td>' + (feature.properties['Stablemaster'] !== null ? autolinker.link(feature.properties['Stablemaster'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Curio Shop</th>\
+                        <td>' + (feature.properties['Curio Shop'] !== null ? autolinker.link(feature.properties['Curio Shop'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Shrines</th>\
+                        <td>' + (feature.properties['Shrines'] !== null ? autolinker.link(feature.properties['Shrines'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Guilds</th>\
+                        <td>' + (feature.properties['Guilds'] !== null ? autolinker.link(feature.properties['Guilds'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Grand Guilds</th>\
+                        <td>' + (feature.properties['Grand Guilds'] !== null ? autolinker.link(feature.properties['Grand Guilds'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Special'] !== null ? autolinker.link(feature.properties['Special'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_Settlements_3_0() {
+            return {
+                pane: 'pane_Settlements_3',
+                radius: 8.0,
+                opacity: 1,
+                color: 'rgba(82,46,44,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(179,156,107,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Settlements_3');
+        map.getPane('pane_Settlements_3').style.zIndex = 403;
+        map.getPane('pane_Settlements_3').style['mix-blend-mode'] = 'normal';
+        var layer_Settlements_3 = new L.geoJson(json_Settlements_3, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Settlements_3',
+            layerName: 'layer_Settlements_3',
+            pane: 'pane_Settlements_3',
+            onEachFeature: pop_Settlements_3,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_Settlements_3_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_Settlements_3);
+        map.addLayer(layer_Settlements_3);
+        function pop_Legend_4(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['id'] !== null ? autolinker.link(feature.properties['id'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_Legend_4_0(feature) {
+            switch(String(feature.properties['id'])) {
+                case 'Forests (Difficult Terrain)':
+                    return {
+                pane: 'pane_Legend_4',
+                interactive: true,
+            }
+                    break;
+                case 'Mountains (Greater Difficult Terrain)':
+                    return {
+                pane: 'pane_Legend_4',
+                interactive: true,
+            }
+                    break;
+                case 'Waterways (Difficult Terrain)':
+                    return {
+                pane: 'pane_Legend_4',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_Legend_4');
+        map.getPane('pane_Legend_4').style.zIndex = 404;
+        map.getPane('pane_Legend_4').style['mix-blend-mode'] = 'normal';
+        var layer_Legend_4 = new L.geoJson(json_Legend_4, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Legend_4',
+            layerName: 'layer_Legend_4',
+            pane: 'pane_Legend_4',
+            onEachFeature: pop_Legend_4,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_Legend_4_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_Legend_4);
+        map.addLayer(layer_Legend_4);
+            var abstract = new L.Control({'position':'bottomright'});
+            abstract.onAdd = function (map) {
+                this._div = L.DomUtil.create('div',
+                'leaflet-control abstract');
+                this._div.id = 'abstract'
+                    this._div.setAttribute("onmouseenter", "abstract.show()");
+                    this._div.setAttribute("onmouseleave", "abstract.hide()");
+                    this.hide();
+                    return this._div;
+                };
+                abstract.hide = function () {
+                    this._div.classList.remove("abstractUncollapsed");
+                    this._div.classList.add("abstract");
+                    this._div.innerHTML = 'i'
+                }
+                abstract.show = function () {
+                    this._div.classList.remove("abstract");
+                    this._div.classList.add("abstractUncollapsed");
+                    this._div.innerHTML = 'This map uses trademarks and/or copyrights owned by Paizo Inc., used under Paizo\'s Community Use Policy (paizo.com/communityuse). We are expressly prohibited from charging you to use or access this content. This map is not published, endorsed, or specifically approved by Paizo. For more information about Paizo Inc. and Paizo products, visit paizo.com.';
+            };
+            abstract.addTo(map);
+        var baseMaps = {};
+        L.control.layers(baseMaps,{'Legend<br /><table><tr><td style="text-align: center;"><img src="legend/Legend_4_Forests0.png" /></td><td>Forests</td></tr><tr><td style="text-align: center;"><img src="legend/Legend_4_Mountains1.png" /></td><td>Mountains</td></tr><tr><td style="text-align: center;"><img src="legend/Legend_4_Waterways2.png" /></td><td>Waterways</td></tr></table>': layer_Legend_4,'<img src="legend/Settlements_3.png" /> Settlements': layer_Settlements_3,'<img src="legend/Roads_2.png" /> Roads': layer_Roads_2,"Terrain Grid": layer_TerrainGrid_1,"Inner Sea Map": layer_InnerSeaMap_0,},{collapsed:false}).addTo(map);
+        setBounds();
+        var i = 0;
+        layer_Settlements_3.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['Settlement'] !== null?String('<div style="color: #ffffff; font-size: 20pt; font-family: \'Georgia\', sans-serif;">' + layer.feature.properties['Settlement']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_Settlements_3'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        L.ImageOverlay.include({
+            getBounds: function () {
+                return this._bounds;
+            }
+        });
+        resetLabels([layer_Settlements_3]);
+        map.on("zoomend", function(){
+            resetLabels([layer_Settlements_3]);
+        });
+        map.on("layeradd", function(){
+            resetLabels([layer_Settlements_3]);
+        });
+        map.on("layerremove", function(){
+            resetLabels([layer_Settlements_3]);
+        });
+        </script>
     </body>
 </html>
