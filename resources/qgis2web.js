@@ -71,7 +71,7 @@ var map = new ol.Map({
     view: new ol.View({
          maxZoom: 28, minZoom: 1, projection: new ol.proj.Projection({
             code: 'ESRI:54001',
-            extent: [-1336761.250000, -2257805.250000, 1735238.750000, 2350194.750000],
+            extent: [-1336761.240400, -2257805.360400, 1735238.759600, 2350194.639600],
             units: 'm'})
     })
 });
@@ -79,7 +79,7 @@ var map = new ol.Map({
 var layerSwitcher = new ol.control.LayerSwitcher({tipLabel: "Layers"});
 map.addControl(layerSwitcher);
 
-map.getView().fit([70812.083333, -3085.250000, 754758.750000, 601714.750000], map.getSize());
+map.getView().fit([-231155.734006, -215506.931125, 1031514.376463, 914617.698134], map.getSize());
 
 var NO_POPUP = 0
 var ALL_FIELDS = 1
